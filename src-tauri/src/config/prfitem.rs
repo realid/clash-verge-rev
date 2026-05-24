@@ -392,7 +392,9 @@ impl PrfItem {
         let data = data.trim_start_matches('\u{feff}');
 
         let file_data = match serde_yaml_ng::from_str::<Mapping>(data) {
-            Ok(yaml) if yaml.contains_key("proxies") || yaml.contains_key("proxy-providers") => Some(data.into()),
+            Ok(yaml) if yaml.contains_key("proxies") || yaml.contains_key("proxy-providers") => {
+                Some(data.into())
+            }
             Ok(_) => None,
             Err(_) => None,
         }
@@ -407,9 +409,8 @@ impl PrfItem {
         let Some(file_data) = file_data else {
             if source.is_some_and(|s| s.eq_ignore_ascii_case("jms")) {
                 bail!("failed to parse JMS subscription body")
-            } else {
-                bail!("profile does not contain `proxies` or `proxy-providers`")
             }
+            bail!("profile does not contain `proxies` or `proxy-providers`")
         };
 
         if merge.is_none() {

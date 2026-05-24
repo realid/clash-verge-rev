@@ -237,9 +237,11 @@ mod tests {
     fn converts_base64_subscription_body() {
         let body = "c3M6Ly9ZV1Z6TFRJMU5pMW5ZMjA2Y0dGemMwQmxlR0Z0Y0d4bExtTnZiVG8wTkRNPQojZGVtbw==";
 
-        let yaml = convert_jms_subscription_body(body)
-            .expect("conversion should succeed")
-            .expect("should produce yaml");
+        let yaml = match convert_jms_subscription_body(body) {
+            Ok(Some(yaml)) => yaml,
+            Ok(None) => panic!("should produce yaml"),
+            Err(err) => panic!("conversion should succeed: {err}"),
+        };
 
         assert!(yaml.contains("proxies:"));
         assert!(yaml.contains("demo"));
@@ -250,9 +252,11 @@ mod tests {
     fn converts_plain_text_subscription_body() {
         let body = "ss://YWVzLTI1Ni1nY206cGFzc0BleGFtcGxlLmNvbTo0NDM=#demo\nnot-a-node\n";
 
-        let yaml = convert_jms_subscription_body(body)
-            .expect("conversion should succeed")
-            .expect("should produce yaml");
+        let yaml = match convert_jms_subscription_body(body) {
+            Ok(Some(yaml)) => yaml,
+            Ok(None) => panic!("should produce yaml"),
+            Err(err) => panic!("conversion should succeed: {err}"),
+        };
 
         assert!(yaml.contains("demo"));
         assert!(yaml.contains("proxies:"));
@@ -261,6 +265,9 @@ mod tests {
     #[test]
     fn returns_none_for_unrecognized_content() {
         let result = convert_jms_subscription_body("not-a-subscription");
-        assert!(result.expect("conversion should succeed").is_none());
+        match result {
+            Ok(value) => assert!(value.is_none()),
+            Err(err) => panic!("conversion should succeed: {err}"),
+        }
     }
 }
