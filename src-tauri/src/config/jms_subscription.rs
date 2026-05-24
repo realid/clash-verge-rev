@@ -231,6 +231,8 @@ pub fn convert_jms_subscription_body(body: &str) -> Result<Option<String>> {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::expect_used, clippy::panic)]
+
     use super::convert_jms_subscription_body;
 
     #[test]
