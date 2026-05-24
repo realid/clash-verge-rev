@@ -203,15 +203,7 @@ pub async fn update_profile(
 
     let should_refresh = match url_opt {
         Some((url, opt, source)) => {
-            perform_profile_update(
-                uid,
-                &url,
-                opt.as_ref(),
-                option,
-                source.as_deref(),
-                is_mannual_trigger,
-            )
-            .await?
+            perform_profile_update(uid, &url, opt.as_ref(), option, source.as_deref(), is_mannual_trigger).await?
                 && auto_refresh
         }
         None => auto_refresh,

@@ -1,3 +1,4 @@
+use super::jms_subscription::convert_jms_subscription_body;
 use crate::{
     config::profiles,
     utils::{
@@ -6,7 +7,6 @@ use crate::{
         tmpl,
     },
 };
-use super::jms_subscription::convert_jms_subscription_body;
 use anyhow::{Context as _, Result, bail};
 use serde::{Deserialize, Serialize};
 use serde_yaml_ng::Mapping;
@@ -392,9 +392,7 @@ impl PrfItem {
         let data = data.trim_start_matches('\u{feff}');
 
         let file_data = match serde_yaml_ng::from_str::<Mapping>(data) {
-            Ok(yaml) if yaml.contains_key("proxies") || yaml.contains_key("proxy-providers") => {
-                Some(data.into())
-            }
+            Ok(yaml) if yaml.contains_key("proxies") || yaml.contains_key("proxy-providers") => Some(data.into()),
             Ok(_) => None,
             Err(_) => None,
         }

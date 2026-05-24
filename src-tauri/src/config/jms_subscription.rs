@@ -1,5 +1,5 @@
 use anyhow::{Context as _, Result};
-use base64::{engine::general_purpose, Engine as _};
+use base64::{Engine as _, engine::general_purpose};
 use percent_encoding::percent_decode_str;
 use serde_json::Value as JsonValue;
 use serde_yaml_ng::{Mapping, Value};
@@ -40,13 +40,9 @@ fn insert_yaml_value(mapping: &mut Mapping, key: &str, value: Value) {
 }
 
 fn mapping_get_str<'a>(mapping: &'a Mapping, key: &str) -> Option<&'a str> {
-    mapping.iter().find_map(|(k, v)| {
-        if k.as_str()? == key {
-            v.as_str()
-        } else {
-            None
-        }
-    })
+    mapping
+        .iter()
+        .find_map(|(k, v)| if k.as_str()? == key { v.as_str() } else { None })
 }
 
 fn parse_ss_node(line: &str) -> Option<Mapping> {
@@ -83,7 +79,11 @@ fn parse_vmess_node(line: &str) -> Option<Mapping> {
 
     let port = data
         .get("port")
-        .and_then(|v| v.as_str().map(str::to_owned).or_else(|| v.as_i64().map(|n| n.to_string())))
+        .and_then(|v| {
+            v.as_str()
+                .map(str::to_owned)
+                .or_else(|| v.as_i64().map(|n| n.to_string()))
+        })
         .and_then(|v| v.parse::<i64>().ok())?;
     let server = data.get("add")?.as_str()?.to_owned();
     let name = data
@@ -95,7 +95,11 @@ fn parse_vmess_node(line: &str) -> Option<Mapping> {
     let uuid = data.get("id")?.as_str()?.to_owned();
     let alter_id = data
         .get("aid")
-        .and_then(|v| v.as_str().map(str::to_owned).or_else(|| v.as_i64().map(|n| n.to_string())))
+        .and_then(|v| {
+            v.as_str()
+                .map(str::to_owned)
+                .or_else(|| v.as_i64().map(|n| n.to_string()))
+        })
         .as_deref()
         .unwrap_or("0")
         .parse::<i64>()
@@ -111,10 +115,7 @@ fn parse_vmess_node(line: &str) -> Option<Mapping> {
     insert_yaml_value(&mut node, "cipher", to_yaml_string_value("auto"));
     insert_yaml_value(&mut node, "udp", Value::from(true));
 
-    let network = data
-        .get("net")
-        .and_then(|v| v.as_str())
-        .unwrap_or("tcp");
+    let network = data.get("net").and_then(|v| v.as_str()).unwrap_or("tcp");
     if network != "tcp" {
         insert_yaml_value(&mut node, "network", to_yaml_string_value(network));
     }
