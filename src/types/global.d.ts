@@ -267,6 +267,7 @@ interface IClashInfo {
 interface IProfileItem {
   uid: string
   type?: 'local' | 'remote' | 'merge' | 'script'
+  source?: 'clash' | 'jms'
   name?: string
   desc?: string
   file?: string

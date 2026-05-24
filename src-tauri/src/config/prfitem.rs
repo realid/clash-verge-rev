@@ -6,6 +6,7 @@ use crate::{
         tmpl,
     },
 };
+use super::jms_subscription::convert_jms_subscription_body;
 use anyhow::{Context as _, Result, bail};
 use serde::{Deserialize, Serialize};
 use serde_yaml_ng::Mapping;
@@ -53,6 +54,10 @@ pub struct PrfItem {
     /// some options of the item
     #[serde(skip_serializing_if = "Option::is_none")]
     pub option: Option<PrfOption>,
+
+    /// remote subscription source subtype
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
 
     /// profile web page url
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -172,7 +177,7 @@ impl PrfItem {
                 let name = item.name.as_ref();
                 let desc = item.desc.as_ref();
                 let option = item.option.as_ref();
-                Self::from_url(url, name, desc, option).await
+                Self::from_url(url, name, desc, option, item.source.as_deref()).await
             }
             "local" => {
                 let name = item.name.clone().unwrap_or_else(|| "Local File".into());
@@ -245,6 +250,7 @@ impl PrfItem {
                 groups,
                 ..PrfOption::default()
             }),
+            source: None,
             home: None,
             updated: Some(chrono::Local::now().timestamp() as usize),
             file_data: Some(file_data.unwrap_or_else(|| tmpl::ITEM_LOCAL.into())),
@@ -258,6 +264,7 @@ impl PrfItem {
         name: Option<&String>,
         desc: Option<&String>,
         option: Option<&PrfOption>,
+        source: Option<&str>,
     ) -> Result<Self> {
         let with_proxy = option.is_some_and(|o| o.with_proxy.unwrap_or(false));
         let self_proxy = option.is_some_and(|o| o.self_proxy.unwrap_or(false));
@@ -384,12 +391,28 @@ impl PrfItem {
         // process the charset "UTF-8 with BOM"
         let data = data.trim_start_matches('\u{feff}');
 
-        // check the data whether the valid yaml format
-        let yaml = serde_yaml_ng::from_str::<Mapping>(data).context("the remote profile data is invalid yaml")?;
-
-        if !yaml.contains_key("proxies") && !yaml.contains_key("proxy-providers") {
-            bail!("profile does not contain `proxies` or `proxy-providers`");
+        let file_data = match serde_yaml_ng::from_str::<Mapping>(data) {
+            Ok(yaml) if yaml.contains_key("proxies") || yaml.contains_key("proxy-providers") => {
+                Some(data.into())
+            }
+            Ok(_) => None,
+            Err(_) => None,
         }
+        .or_else(|| {
+            if source.is_some_and(|s| s.eq_ignore_ascii_case("jms")) {
+                convert_jms_subscription_body(data).ok().flatten()
+            } else {
+                None
+            }
+        });
+
+        let Some(file_data) = file_data else {
+            if source.is_some_and(|s| s.eq_ignore_ascii_case("jms")) {
+                bail!("failed to parse JMS subscription body")
+            } else {
+                bail!("profile does not contain `proxies` or `proxy-providers`")
+            }
+        };
 
         if merge.is_none() {
             let merge_item = &mut Self::from_merge(None)?;
@@ -436,9 +459,10 @@ impl PrfItem {
                 allow_auto_update,
                 ..PrfOption::default()
             }),
+            source: source.map(Into::into),
             home,
             updated: Some(chrono::Local::now().timestamp() as usize),
-            file_data: Some(data.into()),
+            file_data: Some(file_data.into()),
         })
     }
 
@@ -458,6 +482,7 @@ impl PrfItem {
             file: Some(file),
             updated: Some(chrono::Local::now().timestamp() as usize),
             file_data: Some(template),
+            source: None,
             ..Default::default()
         })
     }
@@ -477,6 +502,7 @@ impl PrfItem {
             file: Some(file),
             updated: Some(chrono::Local::now().timestamp() as usize),
             file_data: Some(tmpl::ITEM_SCRIPT.into()),
+            source: None,
             ..Default::default()
         })
     }
@@ -492,6 +518,7 @@ impl PrfItem {
             file: Some(file),
             updated: Some(chrono::Local::now().timestamp() as usize),
             file_data: Some(tmpl::ITEM_RULES.into()),
+            source: None,
             ..Default::default()
         })
     }
@@ -507,6 +534,7 @@ impl PrfItem {
             file: Some(file),
             updated: Some(chrono::Local::now().timestamp() as usize),
             file_data: Some(tmpl::ITEM_PROXIES.into()),
+            source: None,
             ..Default::default()
         })
     }
@@ -522,6 +550,7 @@ impl PrfItem {
             file: Some(file),
             updated: Some(chrono::Local::now().timestamp() as usize),
             file_data: Some(tmpl::ITEM_GROUPS.into()),
+            source: None,
             ..Default::default()
         })
     }

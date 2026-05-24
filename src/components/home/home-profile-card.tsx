@@ -60,6 +60,7 @@ interface ProfileExtra {
 interface ProfileItem {
   uid: string
   type?: 'local' | 'remote' | 'merge' | 'script'
+  source?: 'clash' | 'jms'
   name?: string
   desc?: string
   file?: string

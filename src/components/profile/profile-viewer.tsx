@@ -49,6 +49,7 @@ export function ProfileViewer({ onChange, ref }: ProfileViewerProps) {
     useForm<IProfileItem>({
       defaultValues: {
         type: 'remote',
+        source: 'clash',
         name: '',
         desc: '',
         url: '',
@@ -111,7 +112,9 @@ export function ProfileViewer({ onChange, ref }: ProfileViewerProps) {
         }
 
         const name = form.name || `${form.type} file`
-        const item = { ...form, name, option }
+        const source =
+          form.type === 'remote' ? (form.source ?? 'clash') : undefined
+        const item = { ...form, name, option, source }
         const isRemote = form.type === 'remote'
         const isUpdate = openType === 'edit'
 
@@ -273,6 +276,24 @@ export function ProfileViewer({ onChange, ref }: ProfileViewerProps) {
 
       {isRemote && (
         <>
+          <Controller
+            name="source"
+            control={control}
+            render={({ field }) => (
+              <FormControl size="small" fullWidth sx={{ mt: 1, mb: 1 }}>
+                <InputLabel>Source</InputLabel>
+                <Select
+                  {...field}
+                  value={field.value ?? 'clash'}
+                  label="Source"
+                >
+                  <MenuItem value="clash">Clash</MenuItem>
+                  <MenuItem value="jms">JMS</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+          />
+
           <Controller
             name="url"
             control={control}

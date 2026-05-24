@@ -108,7 +108,7 @@ async fn import_subscription(url: &str, name: Option<&String>) {
 }
 
 async fn fetch_profile_item(url: &str, name: Option<&String>) -> Option<PrfItem> {
-    match PrfItem::from_url(url, name, None, None).await {
+    match PrfItem::from_url(url, name, None, None, None).await {
         Ok(item) => Some(item),
         Err(e) => {
             logging!(error, Type::Config, "failed to parse profile from url: {:?}", e);

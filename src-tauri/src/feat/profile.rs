@@ -63,7 +63,10 @@ pub async fn switch_proxy_node(group_name: &str, proxy_name: &str) {
     }
 }
 
-async fn should_update_profile(uid: &String, ignore_auto_update: bool) -> Result<Option<(String, Option<PrfOption>)>> {
+async fn should_update_profile(
+    uid: &String,
+    ignore_auto_update: bool,
+) -> Result<Option<(String, Option<PrfOption>, Option<String>)>> {
     let profiles = Config::profiles().await;
     let profiles = profiles.latest_arc();
     let item = profiles.get_item(uid)?;
@@ -93,6 +96,7 @@ async fn should_update_profile(uid: &String, ignore_auto_update: bool) -> Result
         Ok(Some((
             item.url.clone().ok_or_else(|| anyhow::anyhow!("Profile URL is None"))?,
             item.option.clone(),
+            item.source.clone(),
         )))
     }
 }
@@ -102,6 +106,7 @@ async fn perform_profile_update(
     url: &String,
     opt: Option<&PrfOption>,
     option: Option<&PrfOption>,
+    source: Option<&str>,
     is_mannual_trigger: bool,
 ) -> Result<bool> {
     logging!(info, Type::Config, "[订阅更新] 开始下载新的订阅内容");
@@ -119,7 +124,7 @@ async fn perform_profile_update(
 
     let mut last_err;
 
-    match PrfItem::from_url(url, None, None, merged_opt.as_ref()).await {
+    match PrfItem::from_url(url, None, None, merged_opt.as_ref(), source).await {
         Ok(mut item) => {
             logging!(info, Type::Config, "[订阅更新] 更新订阅配置成功");
             profiles_draft_update_item_safe(uid, &mut item).await?;
@@ -139,7 +144,7 @@ async fn perform_profile_update(
     merged_opt.get_or_insert_with(PrfOption::default).self_proxy = Some(true);
     merged_opt.get_or_insert_with(PrfOption::default).with_proxy = Some(false);
 
-    match PrfItem::from_url(url, None, None, merged_opt.as_ref()).await {
+    match PrfItem::from_url(url, None, None, merged_opt.as_ref(), source).await {
         Ok(mut item) => {
             logging!(info, Type::Config, "[订阅更新] 使用 Clash代理 更新订阅配置成功");
             profiles_draft_update_item_safe(uid, &mut item).await?;
@@ -161,7 +166,7 @@ async fn perform_profile_update(
     merged_opt.get_or_insert_with(PrfOption::default).self_proxy = Some(false);
     merged_opt.get_or_insert_with(PrfOption::default).with_proxy = Some(true);
 
-    match PrfItem::from_url(url, None, None, merged_opt.as_ref()).await {
+    match PrfItem::from_url(url, None, None, merged_opt.as_ref(), source).await {
         Ok(mut item) => {
             logging!(info, Type::Config, "[订阅更新] 使用 系统代理 更新订阅配置成功");
             profiles_draft_update_item_safe(uid, &mut item).await?;
@@ -197,8 +202,17 @@ pub async fn update_profile(
     let url_opt = should_update_profile(uid, ignore_auto_update).await?;
 
     let should_refresh = match url_opt {
-        Some((url, opt)) => {
-            perform_profile_update(uid, &url, opt.as_ref(), option, is_mannual_trigger).await? && auto_refresh
+        Some((url, opt, source)) => {
+            perform_profile_update(
+                uid,
+                &url,
+                opt.as_ref(),
+                option,
+                source.as_deref(),
+                is_mannual_trigger,
+            )
+            .await?
+                && auto_refresh
         }
         None => auto_refresh,
     };
