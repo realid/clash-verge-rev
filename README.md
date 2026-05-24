@@ -64,7 +64,7 @@ Supports Windows (x64/x86), Linux (x64/arm64) and macOS 11+ (intel/apple).
 - 基于性能强劲的 Rust 和 Tauri 2 框架
 - 内置[Clash.Meta(mihomo)](https://github.com/MetaCubeX/mihomo)内核，并支持切换 `Alpha` 版本内核。
 - 简洁美观的用户界面，支持自定义主题颜色、代理组/托盘图标以及 `CSS Injection`。
-- 配置文件管理和增强（Merge 和 Script），配置文件语法提示。
+- 配置文件管理和增强（Merge 和 Script），配置文件语法提示，支持普通远程订阅和 JMS 订阅链接解析。
 - 系统代理和守卫、`TUN(虚拟网卡)` 模式。
 - 可视化节点和规则编辑
 - WebDav 配置备份和同步

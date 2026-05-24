@@ -85,7 +85,7 @@ Join [@clash_verge_rev](https://t.me/clash_verge_re) for update announcements.
 - Built on high-performance Rust with the Tauri 2 framework
 - Ships with the embedded [Clash.Meta (mihomo)](https://github.com/MetaCubeX/mihomo) core and supports switching to the `Alpha` channel
 - Clean, polished UI with theme color controls, proxy group/tray icons, and `CSS Injection`
-- Enhanced profile management (Merge and Script helpers) with configuration syntax hints
+- Enhanced profile management (Merge and Script helpers) with configuration syntax hints, including standard remote subscriptions and JMS subscription link parsing
 - System proxy controls, guard mode, and `TUN` (virtual network adapter) support
 - Visual editors for nodes and rules
 - WebDAV-based backup and sync for configurations
