@@ -392,9 +392,7 @@ impl PrfItem {
         let data = data.trim_start_matches('\u{feff}');
 
         let file_data = match serde_yaml_ng::from_str::<Mapping>(data) {
-            Ok(yaml) if yaml.contains_key("proxies") || yaml.contains_key("proxy-providers") => {
-                Some(data.into())
-            }
+            Ok(yaml) if yaml.contains_key("proxies") || yaml.contains_key("proxy-providers") => Some(data.into()),
             Ok(_) => None,
             Err(_) => None,
         }
